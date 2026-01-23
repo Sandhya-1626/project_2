@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Simple AI-based Customer Feedback Analyzer using keyword matching.">
+    <title>Customer Feedback Analyzer - Live Demo</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            /* Indigo */
+            --secondary-color: #4f46e5;
+            --background-start: #f3f4f6;
+            --background-end: #e5e7eb;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-light: #6b7280;
+            --result-good: #10b981;
+            /* Emerald */
+            --result-avg: #f59e0b;
+            /* Amber */
+            --result-bad: #ef4444;
+            /* Red */
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-main);
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 1.5rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .result-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result-title {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .good {
+            color: var(--result-good);
+        }
+
+        .average {
+            color: var(--result-avg);
+        }
+
+        .bad {
+            color: var(--result-bad);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Feedback Analyzer</h1>
+        <p class="subtitle">Enter customer feedback to classify it as Good, Average, or Bad.</p>
+
+        <textarea id="feedbackInput" placeholder="e.g., The service was amazing and I loved it!"></textarea>
+        <button id="analyzeBtn">Analyze Feedback</button>
+
+        <div id="resultBox" class="result-box">
+            <span class="result-title">Analysis Result</span>
+            <div id="resultValue" class="result-value"></div>
+            <p style="margin-top: 10px; color: #6b7280; font-size: 0.9em;">
+                (Based on keyword matching)
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const feedbackInput = document.getElementById('feedbackInput');
+        const resultBox = document.getElementById('resultBox');
+        const resultValue = document.getElementById('resultValue');
+
+        analyzeBtn.addEventListener('click', () => {
+            const text = feedbackInput.value.trim();
+            if (!text) {
+                alert("Please enter some feedback text.");
+                return;
+            }
+
+            const result = analyzeFeedback(text);
+            resultValue.innerText = result;
+            resultValue.className = 'result-value ' + result.toLowerCase();
+            resultBox.style.display = 'block';
+        });
+
+        function analyzeFeedback(text) {
+            const goodKeywords = ["good", "great", "excellent", "amazing", "love", "best", "happy", "nice", "fast", "helpful"];
+            const badKeywords = ["bad", "terrible", "worst", "hate", "slow", "rude", "poor", "awful", "horrible", "sad"];
+
+            let goodScore = 0;
+            let badScore = 0;
+
+            // Convert to lowercase and split by spaces/punctuation
+            const words = text.toLowerCase().split(/[^a-zA-Z]+/);
+
+            words.forEach(word => {
+                if (goodKeywords.includes(word)) {
+                    goodScore++;
+                } else if (badKeywords.includes(word)) {
+                    badScore++;
+                }
+            });
+
+            if (goodScore > badScore) return "Good";
+            if (badScore > goodScore) return "Bad";
+            return "Average";
+        }
+    </script>
+</body>
+
+</html>
